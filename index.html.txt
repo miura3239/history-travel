@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>歴史タイムトラベル★6年社会</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap');
+    body { font-family: 'Zen Maru Gothic', sans-serif; background: #f0f9ff; }
+    .chat-message { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); }
+    .era-section { border-left: 4px solid #f97316; padding-left: 12px; margin-bottom: 12px; }
+  </style>
+</head>
+<body class="h-full">
+  <div id="app" class="min-h-full py-6 px-4" style="background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 100%);">
+    <div class="max-w-4xl mx-auto">
+      
+      <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold mb-2 text-orange-500 drop-shadow-sm">🕰️ 歴史タイムトラベル★</h1>
+        <p class="text-blue-600 font-bold text-lg">昔の日本へゴー！歴史のプロに聞いてみよう！</p>
+      </header>
+
+      <div class="glass-card rounded-3xl shadow-xl overflow-hidden min-h-[750px] flex flex-col border-4 border-white">
+        
+        <div id="home-view" class="p-6 space-y-8 overflow-y-auto custom-scroll flex-1">
+          <section>
+            <h2 class="text-xl font-bold text-orange-500 mb-4 flex items-center gap-2">
+              <span class="text-2xl">⏳</span> 時代を選んで「くらし」を聞く
+            </h2>
+            <div id="era-list" class="flex flex-wrap gap-2"></div>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-blue-500 mb-6 flex items-center gap-2 border-b-2 border-blue-100 pb-2">
+              <span class="text-2xl">👥</span> 歴史の人物に会う（時代順）
+            </h2>
+            <div id="person-sections" class="space-y-8"></div>
+          </section>
+        </div>
+
+        <div id="chat-view" class="hidden flex-1 flex flex-col h-full bg-white/50">
+          <div class="p-4 bg-white/90 border-b flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3">
+              <div id="target-icon" class="text-4xl bg-orange-100 p-2 rounded-full"></div>
+              <div>
+                <h2 id="target-name" class="font-bold text-2xl text-slate-800"></h2>
+                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">歴史の事実を答えるよ</span>
+              </div>
+            </div>
+            <button onclick="goToHome()" class="font-bold text-white bg-orange-400 px-6 py-2 rounded-full hover:bg-orange-500 shadow-md">ホームへ戻る</button>
+          </div>
+          
+          <div id="chat-history" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scroll"></div>
+          
+          <form id="chat-form" class="p-4 bg-white border-t flex gap-3">
+            <input id="chat-input" type="text" class="flex-1 border-2 border-blue-100 rounded-2xl px-5 py-3 outline-none focus:border-orange-400 transition text-lg font-bold" placeholder="知りたいことを聞いてね！" required>
+            <button type="submit" class="bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold hover:bg-blue-600 shadow-lg">聞く！</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ★APIキーを最新のものに更新しました
+    const API_KEY = "AIzaSyA8Ud9x1Fls-bjRaxcCWaZqNn96azH_yPU";
+    
+    const eraData = [
+      { name: "弥生・古墳", people: ["卑弥呼"] },
+      { name: "飛鳥・奈良", people: ["聖徳太子", "小野妹子", "中大兄皇子", "中臣鎌足", "聖武天皇", "行基", "鑑真"] },
+      { name: "平安", people: ["藤原道長", "紫式部", "清少納言", "平清盛"] },
+      { name: "鎌倉・南北朝", people: ["源頼朝", "源義経", "北条時宗", "足利尊氏"] },
+      { name: "室町・戦国", people: ["足利義満", "足利義政", "雪舟", "ザビエル", "織田信長", "豊臣秀吉"] },
+      { name: "江戸", people: ["徳川家康", "徳川家光", "近松門左衛門", "歌川広重", "本居宣長", "杉田玄白", "伊能忠敬", "ペリー"] },
+      { name: "明治", people: ["坂本龍馬", "西郷隆盛", "大久保利通", "木戸孝允", "福沢諭吉", "伊藤博文", "陸奥宗光", "小村寿太郎", "与謝野晶子", "野口英世", "平塚らいてう", "渋沢栄一"] }
+    ];
+
+    const eras = ["縄文時代","弥生時代","古墳時代","飛鳥時代","奈良時代","平安時代","鎌倉時代","室町時代","安土桃山時代","江戸時代","明治時代","大正時代","昭和時代"];
+
+    let currentSelection = "";
+
+    function init() {
+      document.getElementById('era-list').innerHTML = eras.map(e => `
+        <button onclick="startChat('${e}', '🕰️')" class="px-5 py-2 bg-white text-orange-500 rounded-full text-sm font-bold shadow-sm border-2 border-orange-100 hover:bg-orange-50 transition">${e}</button>`).join('');
+
+      const container = document.getElementById('person-sections');
+      container.innerHTML = eraData.map(data => `
+        <div class="era-section">
+          <h3 class="text-sm font-bold text-slate-500 mb-3">${data.name}</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+            ${data.people.map(p => `
+              <button onclick="startChat('${p}', '👤')" class="p-3 bg-white border-2 border-blue-50 rounded-xl hover:border-blue-200 shadow-sm transition text-center font-bold text-slate-700 text-sm">${p}</button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function startChat(name, icon) {
+      currentSelection = name;
+      document.getElementById('home-view').classList.add('hidden');
+      document.getElementById('chat-view').classList.remove('hidden');
+      document.getElementById('target-name').textContent = name;
+      document.getElementById('target-icon').textContent = icon;
+      document.getElementById('chat-history').innerHTML = '';
+      addMessage('ai', `やあ、私は「${name}」だよ。歴史の記録をもとに、正しい事実を教えるね。何でも聞いてよ！`);
+    }
+
+    function goToHome() {
+      document.getElementById('home-view').classList.remove('hidden');
+      document.getElementById('chat-view').classList.add('hidden');
+    }
+
+    async function getAIResponse(userQuery) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `あなたは「${currentSelection}」として振る舞い、小学生にもわかりやすく答えてください。歴史的事実に基づき、親しみやすい口調で話してください。質問：${userQuery}`
+              }]
+            }]
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          return "【エラー】" + data.error.message;
+        }
+        return data.candidates[0].content.parts[0].text;
+      } catch (err) {
+        return "通信エラーだよ。インターネットがつながっているか確認してね。";
+      }
+    }
+
+    document.getElementById('chat-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const q = input.value.trim();
+      if (!q) return;
+
+      addMessage('user', q);
+      input.value = '';
+
+      const loadingId = addMessage('ai', '歴史の資料を調べているよ...');
+      const answer = await getAIResponse(q);
+      document.getElementById(loadingId).innerText = answer;
+    };
+
+    function addMessage(type, text) {
+      const h = document.getElementById('chat-history');
+      const id = 'm-' + Date.now() + Math.random();
+      const div = document.createElement('div');
+      div.className = `chat-message flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+      
+      const bgColor = type === 'user' ? 'bg-blue-500 text-white rounded-tr-none' : 'bg-white text-slate-700 rounded-tl-none border-2 border-blue-50';
+      
+      div.innerHTML = `<div id="${id}" class="max-w-[85%] p-4 rounded-2xl text-base font-bold shadow-sm ${bgColor} whitespace-pre-wrap leading-relaxed">${text}</div>`;
+      
+      h.appendChild(div);
+      h.scrollTop = h.scrollHeight;
+      return id;
+    }
+
+    init();
+  </script>
+</body>
+</html>
