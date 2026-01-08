@@ -32,7 +32,6 @@
             </h2>
             <div id="era-list" class="flex flex-wrap gap-2"></div>
           </section>
-
           <section>
             <h2 class="text-xl font-bold text-blue-500 mb-6 flex items-center gap-2 border-b-2 border-blue-100 pb-2">
               <span class="text-2xl">👥</span> 歴史の人物に会う（時代順）
@@ -65,6 +64,7 @@
   <script>
     const API_KEY = "AIzaSyA8Ud9x1Fls-bjRaxcCWaZqNn96azH_yPU";
     
+    // ... (eraData, eras などのデータ部分は変更なし) ...
     const eraData = [
       { name: "弥生・古墳", people: ["卑弥呼"] },
       { name: "飛鳥・奈良", people: ["聖徳太子", "小野妹子", "中大兄皇子", "中臣鎌足", "聖武天皇", "行基", "鑑真"] },
@@ -74,15 +74,12 @@
       { name: "江戸", people: ["徳川家康", "徳川家光", "近松門左衛門", "歌川広重", "本居宣長", "杉田玄白", "伊能忠敬", "ペリー"] },
       { name: "明治", people: ["坂本龍馬", "西郷隆盛", "大久保利通", "木戸孝允", "福沢諭吉", "伊藤博文", "陸奥宗光", "小村寿太郎", "与謝野晶子", "野口英世", "平塚らいてう", "渋沢栄一"] }
     ];
-
     const eras = ["縄文時代","弥生時代","古墳時代","飛鳥時代","奈良時代","平安時代","鎌倉時代","室町時代","安土桃山時代","江戸時代","明治時代","大正時代","昭和時代"];
-
     let currentSelection = "";
 
     function init() {
       document.getElementById('era-list').innerHTML = eras.map(e => `
         <button onclick="startChat('${e}', '🕰️')" class="px-5 py-2 bg-white text-orange-500 rounded-full text-sm font-bold shadow-sm border-2 border-orange-100 hover:bg-orange-50 transition">${e}</button>`).join('');
-
       const container = document.getElementById('person-sections');
       container.innerHTML = eraData.map(data => `
         <div class="era-section">
@@ -111,9 +108,9 @@
       document.getElementById('chat-view').classList.add('hidden');
     }
 
-    // ★修正のポイント: モデル名を gemini-1.5-flash に固定しました
+    // ★修正のポイント: 画像で確認できた「gemini-2.5-flash」を正確に使用
     async function getAIResponse(userQuery) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
       try {
         const response = await fetch(url, {
           method: "POST",
@@ -121,7 +118,7 @@
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `あなたは「${currentSelection}」として、小学生にもわかるように話してください。歴史的事実を重視し、親しみやすい口調で話してください。質問：${userQuery}`
+                text: `あなたは「${currentSelection}」です。小学生に歴史を教える先生のように、優しく丁寧な口調で答えてください。質問：${userQuery}`
               }]
             }]
           })
@@ -129,11 +126,11 @@
 
         const data = await response.json();
         if (data.error) {
-          return "【エラー】" + data.error.message;
+          return "【APIエラー】" + data.error.message;
         }
         return data.candidates[0].content.parts[0].text;
       } catch (err) {
-        return "通信エラーだよ。インターネットを確認してみてね。";
+        return "通信エラーが発生しました。";
       }
     }
 
@@ -142,10 +139,8 @@
       const input = document.getElementById('chat-input');
       const q = input.value.trim();
       if (!q) return;
-
       addMessage('user', q);
       input.value = '';
-
       const loadingId = addMessage('ai', '歴史の資料を調べているよ...');
       const answer = await getAIResponse(q);
       document.getElementById(loadingId).innerText = answer;
