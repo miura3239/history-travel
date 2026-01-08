@@ -68,7 +68,7 @@
   </div>
 
   <script>
-    // ★APIキーを最新のものに更新しました
+    // 提供されたAPIキーを設定
     const API_KEY = "AIzaSyA8Ud9x1Fls-bjRaxcCWaZqNn96azH_yPU";
     
     const eraData = [
@@ -117,8 +117,9 @@
       document.getElementById('chat-view').classList.add('hidden');
     }
 
+    // ★修正箇所：APIのバージョンを v1 に変更し、エラー処理を強化しました
     async function getAIResponse(userQuery) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
       try {
         const response = await fetch(url, {
           method: "POST",
@@ -126,19 +127,28 @@
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `あなたは「${currentSelection}」として振る舞い、小学生にもわかりやすく答えてください。歴史的事実に基づき、親しみやすい口調で話してください。質問：${userQuery}`
+                text: `あなたは「${currentSelection}」として、小学生にもわかるように話してください。歴史的事実を重視しつつ、当時の様子を詳しく教えてください。質問：${userQuery}`
               }]
             }]
           })
         });
 
         const data = await response.json();
+        
+        // 詳細なエラー表示
         if (data.error) {
-          return "【エラー】" + data.error.message;
+          console.error("API Error:", data.error);
+          return `【エラー】${data.error.message}`;
         }
+        
+        if (!data.candidates || data.candidates.length === 0) {
+          return "AIが回答を生成できませんでした。";
+        }
+
         return data.candidates[0].content.parts[0].text;
       } catch (err) {
-        return "通信エラーだよ。インターネットがつながっているか確認してね。";
+        console.error("Fetch Error:", err);
+        return "通信エラーが発生しました。インターネット接続を確認してください。";
       }
     }
 
