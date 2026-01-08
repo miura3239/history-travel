@@ -21,7 +21,7 @@
     <div class="max-w-4xl mx-auto">
       <header class="text-center mb-6">
         <h1 class="text-4xl font-extrabold mb-2 text-orange-500 drop-shadow-sm">🕰️ 歴史タイムトラベル★</h1>
-        <p class="text-blue-600 font-bold text-lg">昔の日本へゴー！歴史のプロに聞いてみよう！</p>
+        <p class="text-blue-600 font-bold text-lg">昔の日本へゴー！歴史の事実に限定して教えるよ</p>
       </header>
 
       <div class="glass-card rounded-3xl shadow-xl overflow-hidden min-h-[750px] flex flex-col border-4 border-white">
@@ -46,14 +46,14 @@
               <div id="target-icon" class="text-4xl bg-orange-100 p-2 rounded-full"></div>
               <div>
                 <h2 id="target-name" class="font-bold text-2xl text-slate-800"></h2>
-                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">歴史の事実を答えるよ</span>
+                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">史実のみを200文字以内で答えます</span>
               </div>
             </div>
             <button onclick="goToHome()" class="font-bold text-white bg-orange-400 px-6 py-2 rounded-full hover:bg-orange-500 shadow-md">ホームへ戻る</button>
           </div>
           <div id="chat-history" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scroll"></div>
           <form id="chat-form" class="p-4 bg-white border-t flex gap-3">
-            <input id="chat-input" type="text" class="flex-1 border-2 border-blue-100 rounded-2xl px-5 py-3 outline-none focus:border-orange-400 transition text-lg font-bold" placeholder="知りたいことを聞いてね！" required>
+            <input id="chat-input" type="text" class="flex-1 border-2 border-blue-100 rounded-2xl px-5 py-3 outline-none focus:border-orange-400 transition text-lg font-bold" placeholder="史実について聞いてね！" required>
             <button type="submit" class="bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold hover:bg-blue-600 shadow-lg">聞く！</button>
           </form>
         </div>
@@ -64,7 +64,6 @@
   <script>
     const API_KEY = "AIzaSyA8Ud9x1Fls-bjRaxcCWaZqNn96azH_yPU";
     
-    // ... (eraData, eras などのデータ部分は変更なし) ...
     const eraData = [
       { name: "弥生・古墳", people: ["卑弥呼"] },
       { name: "飛鳥・奈良", people: ["聖徳太子", "小野妹子", "中大兄皇子", "中臣鎌足", "聖武天皇", "行基", "鑑真"] },
@@ -100,7 +99,7 @@
       document.getElementById('target-name').textContent = name;
       document.getElementById('target-icon').textContent = icon;
       document.getElementById('chat-history').innerHTML = '';
-      addMessage('ai', `やあ、私は「${name}」だよ。歴史の記録をもとに、正しい事実を教えるね。何でも聞いてよ！`);
+      addMessage('ai', `やあ、私は「${name}」だよ。歴史の記録をもとに、正しい事実だけを短く教えるね。`);
     }
 
     function goToHome() {
@@ -108,7 +107,7 @@
       document.getElementById('chat-view').classList.add('hidden');
     }
 
-    // ★修正のポイント: 画像で確認できた「gemini-2.5-flash」を正確に使用
+    // ★指示（プロンプト）の強化
     async function getAIResponse(userQuery) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
       try {
@@ -118,19 +117,19 @@
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `あなたは「${currentSelection}」です。小学生に歴史を教える先生のように、優しく丁寧な口調で答えてください。質問：${userQuery}`
+                text: `あなたは「${currentSelection}」です。小学生向けに以下のルールを厳守して答えてください：
+                1. 必ず【200文字以内】で簡潔に答える。
+                2. 想像を排除し、【史実（歴史的事実）】に基づいた内容のみを答える。
+                3. 史実として不明な点や確証がないことは、適当に答えず「わかりません」とはっきり伝える。
+                質問：${userQuery}`
               }]
             }]
           })
         });
-
         const data = await response.json();
-        if (data.error) {
-          return "【APIエラー】" + data.error.message;
-        }
         return data.candidates[0].content.parts[0].text;
       } catch (err) {
-        return "通信エラーが発生しました。";
+        return "通信エラーです。";
       }
     }
 
@@ -141,7 +140,7 @@
       if (!q) return;
       addMessage('user', q);
       input.value = '';
-      const loadingId = addMessage('ai', '歴史の資料を調べているよ...');
+      const loadingId = addMessage('ai', '調査中...');
       const answer = await getAIResponse(q);
       document.getElementById(loadingId).innerText = answer;
     };
@@ -157,7 +156,6 @@
       h.scrollTop = h.scrollHeight;
       return id;
     }
-
     init();
   </script>
 </body>
